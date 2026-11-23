@@ -15,6 +15,7 @@ export type Report = {
   backRoutes: number;
   finalPassed: boolean | null;
   killRate: { killed: number; total: number } | null;
+  stoppedReason?: string;
   startedAt: string;
   finishedAt: string;
 };
@@ -67,6 +68,13 @@ export async function runFactory(opts: Opts): Promise<Report> {
         logFile: join(runDir, "logs", `${name}-${n}.json`), denyPaths: [priv],
       });
       collect(ws);
+      if (res.fatal) {
+        report.stages.push({ stage: name, attempt: n, errors: [res.fatal] });
+        report.stoppedReason = res.fatal;
+        save();
+        log(`stopping: ${res.fatal}`);
+        return false;
+      }
       const errors = res.ok ? await gate() : [`claude exited with an error in stage ${name}`];
       report.stages.push({ stage: name, attempt: n, errors });
       save();

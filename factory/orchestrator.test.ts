@@ -86,4 +86,16 @@ describe("runFactory", () => {
     expect(r.result).toBe("failed");
     expect(seen.filter((s) => s.stage === "tests")).toHaveLength(3);
   });
+
+  it("stops the whole run immediately on a fatal agent error", async () => {
+    const seen: AgentRequest[] = [];
+    const agent: Agent = async (req) => {
+      seen.push(req);
+      return { ok: false, fatal: "API error: limit" };
+    };
+    const r = await runFactory({ brief, runDir, agent });
+    expect(r.result).toBe("failed");
+    expect(r.stoppedReason).toBe("API error: limit");
+    expect(seen).toHaveLength(1);
+  });
 });
