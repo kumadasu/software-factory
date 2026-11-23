@@ -1,1 +1,10 @@
-# analyze
+# 工程1:STPAで安全分析する
+
+`brief.md`(題材)、`interface.ts`(固定の入出力)、`stpa-guide.md`(手順)を読み、`analysis.json` を書いてください。`analysis.json` がすでにあれば、それを直してください。人に質問せず、題材メモの範囲で決めてください。
+
+- 形式は `stpa-guide.md` の「出力形式」に従う。
+- 実装するコントローラは1つだけ(`implemented: true`)。ほかのコントローラ(利用者、センサ、外部装置)は `implemented: false` にし、その制御アクションには対応する入力イベントを `event` に書く。
+- 制御アクションは2〜4個、安全制約(SC)は3〜8本。
+- すべての制御アクションに、UCAの4分類を当てる。該当しない分類は `notApplicable` に理由を書く。
+- SCの `refs` には `interface.ts` の `IO` にある名前を `input.<名前>` / `output.<名前>` で書く。どのSCも、実装するコントローラの出力を1つ以上含める。
+- 割り込みが終わったあとに何を元に戻し、何を捨てるかを必ず検討する(`wrongDuration` の分類で扱う)。
