@@ -21,7 +21,7 @@ export type Report = {
 
 const MAX_ATTEMPTS = 3;
 const MAX_BACK_ROUTES = 2;
-const MAX_TURNS: Record<StageName, number> = { holdout: 40, analyze: 40, tests: 60, build: 60 };
+const MAX_TURNS: Record<StageName, number> = { holdout: 60, analyze: 40, tests: 100, build: 60 };
 const STPA_GUIDE = join(dirname(fileURLToPath(import.meta.url)), "stpa-guide.md");
 
 type Opts = { brief: string; runDir: string; agent: Agent; reviewHoldout?: boolean };
