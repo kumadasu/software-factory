@@ -1,0 +1,27 @@
+{
+  "controllers": [
+    { "id": "lampController", "implemented": true },
+    { "id": "user", "implemented": false }
+  ],
+  "losses": [{ "id": "L-1", "text": "Fire caused by the lamp" }],
+  "hazards": [{ "id": "H-1", "text": "Lamp is lit while overheated", "losses": ["L-1"] }],
+  "controlActions": [
+    { "id": "CA-1", "controller": "lampController", "name": "light" },
+    { "id": "CA-2", "controller": "user", "name": "requestOn", "event": "user.on" }
+  ],
+  "ucas": [
+    { "id": "UCA-1", "action": "CA-1", "type": "providedUnsafe", "context": "while overheated", "hazards": ["H-1"] },
+    { "id": "UCA-2", "action": "CA-1", "type": "wrongDuration", "context": "keeps lighting after overheat starts", "hazards": ["H-1"] },
+    { "id": "UCA-3", "action": "CA-2", "type": "providedUnsafe", "context": "user requests on while overheated", "hazards": ["H-1"] }
+  ],
+  "notApplicable": [
+    { "action": "CA-1", "type": "notProvided", "reason": "Not lighting is never hazardous" },
+    { "action": "CA-1", "type": "wrongTiming", "reason": "No ordering with other actions" },
+    { "action": "CA-2", "type": "notProvided", "reason": "No request means lamp stays off" },
+    { "action": "CA-2", "type": "wrongTiming", "reason": "Covered by UCA-3" },
+    { "action": "CA-2", "type": "wrongDuration", "reason": "Request is instantaneous" }
+  ],
+  "constraints": [
+    { "id": "SC-1", "text": "The lamp must be off while overheated", "ucas": ["UCA-1", "UCA-2", "UCA-3"], "refs": ["input.sensor.overheat", "output.lamp"] }
+  ]
+}
