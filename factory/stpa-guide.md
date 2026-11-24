@@ -13,20 +13,23 @@
 
    該当しない分類は `notApplicable` に理由を書く。
 5. **安全制約(SC)**:UCAを裏返して、実装するコントローラが守る約束にする。外部のコントローラのUCAも、実装するコントローラがどう防ぐかの約束に変える。
+   - SC 1本には約束を1つだけ書く。複数の約束を1本に詰め込まない。
+   - `interface.ts` の型で表せない入力(型が禁じている値)についての約束はSCにしない。型がすでに防いでいる。
+   - 題材メモで決まっていない振る舞い(割り込みの後に何を戻し、何を捨てるかなど)は、題材メモの要求と矛盾しない側を選び、SCの `text` に選んだことを明記する。
 
 ## 出力形式(`analysis.json`)
 
 ```json
 {
-  "controllers": [{ "id": "carController", "implemented": true }, { "id": "passenger", "implemented": false }],
+  "controllers": [{ "id": "lampController", "implemented": true }, { "id": "user", "implemented": false }],
   "losses": [{ "id": "L-1", "text": "..." }],
   "hazards": [{ "id": "H-1", "text": "...", "losses": ["L-1"] }],
   "controlActions": [
-    { "id": "CA-1", "controller": "carController", "name": "move" },
-    { "id": "CA-2", "controller": "passenger", "name": "call", "event": "hall.call" }
+    { "id": "CA-1", "controller": "lampController", "name": "turnOn" },
+    { "id": "CA-2", "controller": "user", "name": "request", "event": "button.press" }
   ],
   "ucas": [{ "id": "UCA-1", "action": "CA-1", "type": "providedUnsafe", "context": "...", "hazards": ["H-1"] }],
   "notApplicable": [{ "action": "CA-1", "type": "notProvided", "reason": "..." }],
-  "constraints": [{ "id": "SC-1", "text": "...", "ucas": ["UCA-1"], "refs": ["input.door.obstructed", "output.car.motion"] }]
+  "constraints": [{ "id": "SC-1", "text": "...", "ucas": ["UCA-1"], "refs": ["input.sensor.overheat", "output.lamp.on"] }]
 }
 ```
