@@ -66,6 +66,18 @@ describe("runFactory", () => {
     const reAnalyze = seen.filter((s) => s.stage === "analyze")[1];
     expect(reAnalyze.prompt).toContain("過熱が解消すると、点灯の要求が残っていればランプが点く");
     expect(reAnalyze.prompt).not.toContain("h1.test.ts");
+    expect(reAnalyze.prompt).toContain("満たされなかった期待");
+    expect(reAnalyze.prompt).not.toContain("症状が観察された");
+  });
+
+  it("stops back-routing when the same holdout symptoms repeat", async () => {
+    const seen: AgentRequest[] = [];
+    const plan = (s: string) => (s === "build" ? { "impl.ts": "stuck-off.impl.ts" } : good[s]);
+    const r = await runFactory({ brief, runDir, agent: fakeAgent(plan, seen) });
+    expect(r.result).toBe("failed");
+    expect(r.backRoutes).toBe(1);
+    expect(seen.filter((s) => s.stage === "build")).toHaveLength(2);
+    expect(r.stoppedReason).toContain("same holdout failures");
   });
 
   it("stops after holdout generation when review is requested, then resumes", async () => {

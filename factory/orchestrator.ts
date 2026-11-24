@@ -133,7 +133,9 @@ export async function runFactory(opts: Opts): Promise<Report> {
           return ["analysis.json is not valid JSON"];
         }
       },
-      symptoms.map((s) => `実装は分析から導いたテストに合格したが、次の症状が観察された:${s}`),
+      symptoms.map(
+        (s) => `満たされなかった期待:「${s}」(実装は分析から導いたテストに合格したが、この期待される振る舞いを満たさなかった)`,
+      ),
     );
     if (!analyzed) return save();
 
@@ -183,6 +185,11 @@ export async function runFactory(opts: Opts): Promise<Report> {
     report.stages[report.stages.length - 1].symptoms = holdoutSymptoms;
     log(`holdout failed with ${holdoutSymptoms.length} symptom(s)`);
     if (round === MAX_BACK_ROUTES) break;
+    if (holdoutSymptoms.join("\n") === symptoms.join("\n")) {
+      report.stoppedReason = "same holdout failures as the previous round";
+      log(`stopping: ${report.stoppedReason}`);
+      break;
+    }
     report.backRoutes++;
     symptoms = holdoutSymptoms;
   }
