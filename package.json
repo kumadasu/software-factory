@@ -7,7 +7,8 @@
   },
   "scripts": {
     "test": "vitest run",
-    "factory": "tsx factory/run.ts"
+    "factory": "tsx factory/run.ts",
+    "baseline": "tsx factory/run-baseline.ts"
   },
   "repository": {
     "type": "git",
