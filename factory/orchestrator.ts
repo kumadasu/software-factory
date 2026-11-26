@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Agent } from "./lib/agent";
 import { HARNESS_PATH } from "./lib/workspace";
 import { checkAnalysis, readIO } from "./gates/g1";
-import { g0, g2, g3, finalCheck, killRate, scIds } from "./gates/run-gates";
+import { g0, g3, finalCheck, scIds } from "./gates/run-gates";
 import { buildPrompt, type StageName } from "./prompts";
 
 export type StageRecord = { stage: StageName; attempt: number; errors: string[]; symptoms?: string[] };
@@ -14,7 +14,6 @@ export type Report = {
   stages: StageRecord[];
   backRoutes: number;
   finalPassed: boolean | null;
-  killRate: { killed: number; total: number } | null;
   stoppedReason?: string;
   startedAt: string;
   finishedAt: string;
@@ -22,7 +21,7 @@ export type Report = {
 
 const MAX_ATTEMPTS = 3;
 const MAX_BACK_ROUTES = 2;
-const MAX_TURNS: Record<StageName, number> = { holdout: 60, analyze: 40, tests: 100, build: 60 };
+const MAX_TURNS: Record<StageName, number> = { holdout: 60, analyze: 40, tests: 140 };
 const STPA_GUIDE = join(dirname(fileURLToPath(import.meta.url)), "stpa-guide.md");
 
 type Opts = { brief: string; runDir: string; agent: Agent; reviewHoldout?: boolean };
@@ -36,7 +35,7 @@ export async function runFactory(opts: Opts): Promise<Report> {
   for (const d of [art, priv, join(runDir, "ws"), join(runDir, "logs"), scratch]) mkdirSync(d, { recursive: true });
 
   const report: Report = {
-    runDir, result: "failed", stages: [], backRoutes: 0, finalPassed: null, killRate: null,
+    runDir, result: "failed", stages: [], backRoutes: 0, finalPassed: null,
     startedAt: new Date().toISOString(), finishedAt: "",
   };
   const counters: Partial<Record<StageName, number>> = {};
@@ -139,35 +138,22 @@ export async function runFactory(opts: Opts): Promise<Report> {
     );
     if (!analyzed) return save();
 
-    clearArt(/^(SC-\d+\.test\.ts|mutant\.SC-\d+\.ts|impl\.ts)$/);
-    const tested = await stage(
+    clearArt(/^(SC-\d+\.test\.ts|impl\.ts)$/);
+    // Stage 2: SC tests and the implementation, written together (no mutants).
+    let holdoutSymptoms: string[] = [];
+    const built = await stage(
       "tests",
       () => ({
         "analysis.json": join(art, "analysis.json"),
         "interface.ts": join(art, "interface.ts"),
         "harness.ts": HARNESS_PATH,
       }),
-      (ws) => copyOut(ws, /^(SC-\d+\.test\.ts|mutant\.SC-\d+\.ts)$/),
+      (ws) => copyOut(ws, /^(SC-\d+\.test\.ts|impl\.ts)$/),
       async () => {
         const a = JSON.parse(readFileSync(join(art, "analysis.json"), "utf8")) as { constraints: { id: string }[] };
         const have = new Set(scIds(art));
         const missing = a.constraints.map((c) => c.id).filter((id) => !have.has(id));
-        return [...missing.map((id) => `${id}.test.ts is missing`), ...(await g2(art, scratch))];
-      },
-    );
-    if (!tested) return save();
-
-    let holdoutSymptoms: string[] = [];
-    const built = await stage(
-      "build",
-      () => ({
-        "analysis.json": join(art, "analysis.json"),
-        "interface.ts": join(art, "interface.ts"),
-        "harness.ts": HARNESS_PATH,
-        ...Object.fromEntries(scIds(art).map((id) => [`${id}.test.ts`, join(art, `${id}.test.ts`)])),
-      }),
-      (ws) => copyOut(ws, /^impl\.ts$/),
-      async () => {
+        if (missing.length > 0) return missing.map((id) => `${id}.test.ts is missing`);
         const r = await g3(art, holdoutDir, scratch);
         holdoutSymptoms = r.symptoms;
         return r.errors;
@@ -177,7 +163,6 @@ export async function runFactory(opts: Opts): Promise<Report> {
 
     if (holdoutSymptoms.length === 0) {
       report.finalPassed = await finalCheck(art, holdoutDir, scratch);
-      report.killRate = await killRate(art, holdoutDir, scratch);
       report.result = "passed";
       log(`passed (final: ${report.finalPassed})`);
       return save();

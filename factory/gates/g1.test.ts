@@ -60,7 +60,7 @@ describe("checkAnalysis", () => {
   it("enforces size limits", () => {
     const a = base();
     a.constraints = [];
-    expect(checkAnalysis(a, io)).toContain("constraints must number 1..8 (got 0)");
+    expect(checkAnalysis(a, io)).toContain("constraints must number 1..16 (got 0)");
   });
 
   it("rejects non-object input", () => {

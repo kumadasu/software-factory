@@ -13,8 +13,7 @@ type Writes = Record<string, string>; // workspace-relative path -> fixture file
 const good: Record<string, Writes> = {
   holdout: { "interface.ts": "interface.ts", holdout: "holdout" },
   analyze: { "analysis.json": "analysis.json" },
-  tests: { "SC-1.test.ts": "SC-1.test.ts", "mutant.SC-1.ts": "mutant.SC-1.ts" },
-  build: { "impl.ts": "impl.ts" },
+  tests: { "SC-1.test.ts": "SC-1.test.ts", "impl.ts": "impl.ts" },
 };
 
 function fakeAgent(plan: (stage: string, call: number) => Writes, seen: AgentRequest[]): Agent {
@@ -37,10 +36,9 @@ describe("runFactory", () => {
     const r = await runFactory({ brief, runDir, agent: fakeAgent((s) => good[s], seen) });
     expect(r.result).toBe("passed");
     expect(r.finalPassed).toBe(true);
-    expect(r.killRate).toEqual({ killed: 1, total: 1 });
-    expect(seen.map((s) => s.stage)).toEqual(["holdout", "analyze", "tests", "build"]);
+    expect(seen.map((s) => s.stage)).toEqual(["holdout", "analyze", "tests"]);
     expect(existsSync(join(runDir, "private", "holdout", "final.test.ts"))).toBe(true);
-    expect(existsSync(join(runDir, "ws", "build-1", "final.test.ts"))).toBe(false);
+    expect(existsSync(join(runDir, "ws", "tests-1", "final.test.ts"))).toBe(false);
     expect(seen[1].denyPaths).toEqual([join(runDir, "private")]);
     expect(JSON.parse(readFileSync(join(runDir, "report.json"), "utf8")).result).toBe("passed");
   });
@@ -57,9 +55,9 @@ describe("runFactory", () => {
 
   it("routes holdout symptoms back to analysis", async () => {
     const seen: AgentRequest[] = [];
-    // First build passes the SC test but breaks recovery after overheat.
+    // First implementation passes the SC test but breaks recovery after overheat.
     const plan = (s: string, n: number) =>
-      s === "build" && n === 1 ? { "impl.ts": "stuck-off.impl.ts" } : good[s];
+      s === "tests" && n === 1 ? { "SC-1.test.ts": "SC-1.test.ts", "impl.ts": "stuck-off.impl.ts" } : good[s];
     const r = await runFactory({ brief, runDir, agent: fakeAgent(plan, seen) });
     expect(r.result).toBe("passed");
     expect(r.backRoutes).toBe(1);
@@ -72,11 +70,12 @@ describe("runFactory", () => {
 
   it("stops back-routing when the same holdout symptoms repeat", async () => {
     const seen: AgentRequest[] = [];
-    const plan = (s: string) => (s === "build" ? { "impl.ts": "stuck-off.impl.ts" } : good[s]);
+    const plan = (s: string) =>
+      s === "tests" ? { "SC-1.test.ts": "SC-1.test.ts", "impl.ts": "stuck-off.impl.ts" } : good[s];
     const r = await runFactory({ brief, runDir, agent: fakeAgent(plan, seen) });
     expect(r.result).toBe("failed");
     expect(r.backRoutes).toBe(1);
-    expect(seen.filter((s) => s.stage === "build")).toHaveLength(2);
+    expect(seen.filter((s) => s.stage === "tests")).toHaveLength(2);
     expect(r.stoppedReason).toContain("same holdout failures");
   });
 
@@ -93,7 +92,7 @@ describe("runFactory", () => {
   it("fails after 3 attempts of the same stage", async () => {
     const seen: AgentRequest[] = [];
     const plan = (s: string) =>
-      s === "tests" ? { "SC-1.test.ts": "SC-1.test.ts", "mutant.SC-1.ts": "impl.ts" } : good[s];
+      s === "tests" ? { "SC-1.test.ts": "SC-1.test.ts", "impl.ts": "mutant.SC-1.ts" } : good[s];
     const r = await runFactory({ brief, runDir, agent: fakeAgent(plan, seen) });
     expect(r.result).toBe("failed");
     expect(seen.filter((s) => s.stage === "tests")).toHaveLength(3);

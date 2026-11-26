@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type StageName = "holdout" | "analyze" | "tests" | "build";
+export type StageName = "holdout" | "analyze" | "tests";
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "prompts");
 

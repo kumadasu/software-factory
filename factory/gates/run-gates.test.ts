@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { cpSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { FIXTURE_DIR } from "../lib/workspace";
-import { g0, g2, g3, finalCheck, killRate } from "./run-gates";
+import { g0, g3, finalCheck } from "./run-gates";
 
 const root = join(process.cwd(), "runs", "_test", "gates");
 const art = join(root, "art");
@@ -28,15 +28,6 @@ describe("gates on the lamp fixture", () => {
     expect(await g0(art, holdout, scratch)).toContain("interface.ts must export Event, Output and IO");
   });
 
-  it("g2 passes when the mutant is killed", async () => {
-    expect(await g2(art, scratch)).toEqual([]);
-  });
-
-  it("g2 fails when the mutant survives", async () => {
-    cpSync(join(FIXTURE_DIR, "impl.ts"), join(art, "mutant.SC-1.ts"));
-    expect(await g2(art, scratch)).toEqual(["mutant.SC-1.ts was not killed by SC-1.test.ts"]);
-  });
-
   it("g3 passes the correct impl", async () => {
     expect(await g3(art, holdout, scratch)).toEqual({ errors: [], symptoms: [] });
   });
@@ -56,9 +47,5 @@ describe("gates on the lamp fixture", () => {
 
   it("finalCheck runs only final.test.ts", async () => {
     expect(await finalCheck(art, holdout, scratch)).toBe(true);
-  });
-
-  it("killRate counts mutants killed by holdout tests", async () => {
-    expect(await killRate(art, holdout, scratch)).toEqual({ killed: 1, total: 1 });
   });
 });

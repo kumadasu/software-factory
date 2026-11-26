@@ -76,9 +76,9 @@ export function checkAnalysis(raw: unknown, io: IONames): string[] {
   }
 
   const n = a.controlActions.length;
-  if (n < 2 || n > 4) errs.push(`controlActions must number 2..4 (got ${n})`);
+  if (n < 2 || n > 6) errs.push(`controlActions must number 2..6 (got ${n})`);
   const m = a.constraints.length;
-  if (m < 1 || m > 8) errs.push(`constraints must number 1..8 (got ${m})`);
+  if (m < 1 || m > 16) errs.push(`constraints must number 1..16 (got ${m})`);
 
   return errs;
 }

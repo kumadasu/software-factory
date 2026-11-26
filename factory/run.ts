@@ -27,7 +27,6 @@ const report = await runFactory({
 });
 
 console.log(`result: ${report.result}, back-routes: ${report.backRoutes}, final: ${report.finalPassed}`);
-if (report.killRate) console.log(`holdout killed ${report.killRate.killed}/${report.killRate.total} mutants`);
 if (report.result === "awaitingReview") {
   console.log(`review ${runDir}/private/holdout and ${runDir}/art/interface.ts, then rerun with --run ${runDir}`);
 }

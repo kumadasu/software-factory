@@ -40,25 +40,6 @@ export async function g0(art: string, holdoutDir: string, _scratch: string): Pro
   return errs;
 }
 
-export async function g2(art: string, scratch: string): Promise<string[]> {
-  const errs: string[] = [];
-  const ids = scIds(art);
-  if (ids.length === 0) return ["no SC-n.test.ts files were written"];
-  for (const id of ids) {
-    const mutant = join(art, `mutant.${id}.ts`);
-    if (!existsSync(mutant)) {
-      errs.push(`mutant.${id}.ts is missing`);
-      continue;
-    }
-    const dir = join(scratch, `g2-${id}`);
-    assemble(dir, { ...base(art, mutant), [`${id}.test.ts`]: join(art, `${id}.test.ts`) });
-    const r = await runVitest(dir);
-    if (r.crashed) errs.push(`${id}.test.ts could not run against mutant.${id}.ts`);
-    else if (r.ok) errs.push(`mutant.${id}.ts was not killed by ${id}.test.ts`);
-  }
-  return errs;
-}
-
 export async function g3(
   art: string,
   holdoutDir: string,
@@ -92,21 +73,4 @@ export async function finalCheck(art: string, holdoutDir: string, scratch: strin
   const dir = join(scratch, "final");
   assemble(dir, { ...base(art, join(art, "impl.ts")), [FINAL]: join(holdoutDir, FINAL) });
   return (await runVitest(dir)).ok;
-}
-
-export async function killRate(
-  art: string,
-  holdoutDir: string,
-  scratch: string,
-): Promise<{ killed: number; total: number }> {
-  const files = Object.fromEntries(holdoutFiles(holdoutDir, true).map((f) => [f, join(holdoutDir, f)]));
-  let killed = 0;
-  const ids = scIds(art).filter((id) => existsSync(join(art, `mutant.${id}.ts`)));
-  for (const id of ids) {
-    const dir = join(scratch, `kill-${id}`);
-    assemble(dir, { ...base(art, join(art, `mutant.${id}.ts`)), ...files });
-    const r = await runVitest(dir);
-    if (!r.ok && !r.crashed) killed++;
-  }
-  return { killed, total: ids.length };
 }
