@@ -1,7 +1,7 @@
 {
   "name": "software-factory",
   "version": "1.0.0",
-  "description": "Software factory の実験用リポジトリ。",
+  "description": "STPAによる安全分析を中心にしたソフトウェアファクトリーの実験",
   "directories": {
     "doc": "docs"
   },
@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT-0",
   "type": "module",
   "bugs": {
     "url": "https://github.com/kumadasu/software-factory/issues"
